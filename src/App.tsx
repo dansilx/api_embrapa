@@ -18,7 +18,7 @@ const  App: React.FC = () => {
     fetch('https://api.exchangerate-api.com/v4/latest/USD')
     .then((response) => response.json())
     .then((data: ApiResponse) => {
-      const chartData = [string, number][] = Object.entries(data.rates);
+      const chartData: [string, number][] = Object.entries(data.rates) as [string, number][];
       Object.entries(data.rates).forEach(([currency, rate]) => {
         chartData.push([currency, rate]);
       });
