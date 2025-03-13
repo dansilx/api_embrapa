@@ -75,6 +75,17 @@ const  App: React.FC = () => {
                         </a>
                       ))}
                   </td>
+                  <td>
+                    <a 
+                      href={`https://www.google.com/search?tbm=isch&q=Batata+Doce+${encodeURIComponent(
+                        praga.nome_cientifico
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"                    
+                    >
+                      Ver Imagens
+                    </a>
+                  </td>
                 </tr>
               ))}
             </tbody>
