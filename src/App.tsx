@@ -58,6 +58,7 @@ const  App: React.FC = () => {
                 <th>Nome Científico</th>
                 <th>Nomes Comuns</th>
                 <th>Fonte (Agrofit)</th>
+                <th>Link de Imagens</th>
               </tr>
             </thead>
             <tbody>
