@@ -20,6 +20,7 @@ const  App: React.FC = () => {
   const ACCESS_TOKEN = "1a02d333-fcdd-3551-a6b6-8b973702e728";
 
   useEffect(() => {
+    document.title = "Batata-Doce Pragas";
     fetch("https://api.cnptia.embrapa.br/agrofit/v1/pragas", {
       method: "GET",
       headers: {
