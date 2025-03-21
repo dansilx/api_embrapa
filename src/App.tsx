@@ -1,7 +1,7 @@
 import React, {useEffect, useState } from 'react'
 import './App.css'
 import { Container, Row, Col, Table } from 'react-bootstrap';
-import axios from 'axios';
+import { fetchChatResponse } from './deepseekService';
 
 interface Cultura {
   nome: string;
@@ -13,17 +13,14 @@ interface Praga {
   nome_cientifico: string;
   nome_comum: string[];
   cultura: Cultura[];
+  tratamento?: string;
 }
 
 const  App: React.FC = () => {
   const [data, setData] = useState<Praga[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [tratamentos, setTratamentos] = useState<{[key: string]: string}>({});
 
   const ACCESS_TOKEN = "1a02d333-fcdd-3551-a6b6-8b973702e728";
-  const DEEPSEEK_API_KEY = '';
-  const DEEPSEEK_API_URL = 'https://deepseek-v3.p.rapidapi.com/chat';
-
 
   useEffect(() => {
     document.title = "Batata-Doce Pragas";
@@ -39,52 +36,31 @@ const  App: React.FC = () => {
       //console.log("Resposta da API:", response);
 
       const batataDoce = response.filter(praga => 
-        praga.cultura.some(c => c.nome.toLowerCase().includes("batata-doce"))
+        praga.cultura.some((c) => 
+          c.nome.toLowerCase().includes("batata-doce")
+      )
     );
 
-      const tratamentosTemp: { [key:string]: string } = {};
-      for (const praga of batataDoce) {
-        const nomeDoenca = praga.nome_cientifico;
-        const pergunta = `Qual o tratamento para ${nomeDoenca}?`;
-        try {
-          const resposta = await fetchChatResponse(pergunta);
-          tratamentosTemp[nomeDoenca] = resposta;
-        } catch (error) {
-          console.error(`Erro ao obter tratamento para ${nomeDoenca}:`, error);
-          tratamentosTemp[nomeDoenca] = 'Não disponível';
-        }
-      }
+      const pragasTratamento: await Promise.all(
+        batataDoce.map(async (praga) => {
+          const pergunta = `Qual o tratamento para ${praga.nome_cientifico}?`;
+          try {
+            const deepseekResponse = await fetchChatResponse(pergunta);
+            const tratamento = deepseekResponse.choices[0]?.message?.content || 'Informação não disponível';
+            return {...praga, tratamento }
+          } catch (error) {
+            console.error(`Erro ao buscar tratamento para ${praga.nome_cientifico}:`, error);
+            return { ...praga, tratamento: 'Erro ao buscar tratamento' };
+          }
+        })
+      );
+      
 
       setData(batataDoce);
-      setTratamentos(tratamentosTemp);
       setLoading(false);
     })
     .catch((error) => console.error("Erro ao buscar dados: ", error));
   }, []);
-
-  const fetchChatResponse = async (message: string) => {
-    const data = {
-      messages: [
-        {
-          role: 'user',
-          content: message,
-        },
-      ],
-    };
-
-    const headers = {
-      'x-rapidapi-key': DEEPSEEK_API_KEY,
-      'x-rapidapi-host': 'deepseek-v3.p.rapidapi.com',
-      'Content-Type': 'application/json',
-    };
-    try {
-      const response = await axios.post(DEEPSEEK_API_URL, data, { headers });
-      return response.data.choices[0].message.content.trim();
-    } catch (error) {
-      console.error('Erro ao buscar resposta do Deepseek:', error);
-      throw error;
-    }
-  }
 
   return (
     <Container>
@@ -102,7 +78,7 @@ const  App: React.FC = () => {
                 <th>Classificação</th>
                 <th>Nome Científico</th>
                 <th>Nomes Comuns</th>
-                <th>Tratamentos Recomendados</th>
+                <th>Tratamento</th>
                 <th>Link de Imagens</th>
               </tr>
             </thead>
@@ -121,7 +97,7 @@ const  App: React.FC = () => {
                         </a>
                       ))}
                   </td> */}
-                  <td>{tratamentos[praga.nome_cientifico] || 'Carregando...'}</td>
+                  <td>{praga.tratamento}</td>
                   <td>
                     <a 
                       href={`https://www.google.com/search?tbm=isch&q=Batata+Doce+${encodeURIComponent(
