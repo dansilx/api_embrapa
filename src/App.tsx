@@ -13,6 +13,7 @@ interface Praga {
   nome_cientifico: string;
   nome_comum: string[];
   cultura: Cultura[];
+  tratamento?: string;
 }
 
 const  App: React.FC = () => {
@@ -21,48 +22,55 @@ const  App: React.FC = () => {
 
   const ACCESS_TOKEN = "1a02d333-fcdd-3551-a6b6-8b973702e728";
 
+  const obterTratamento = async (nomeDoenca: string): Promise<string> => 
+    {
+      try {
+        const pergunta = `Qual o tratamento para ${nomeDoenca} em batata-doce?`;
+        const response = await fetchChatResponse(pergunta);
+        return response.choices[0]?.message?.content || 'Nenhuma resposta encontrada';
+      } catch (error) {
+        console.error(`Erro ao obter tratamento para ${nomeDoenca}:`, error);
+        return 'Erro ao obter tratamento';
+      }
+    };
+
   useEffect(() => {
     document.title = "Batata-Doce Pragas";
-    fetch("https://api.cnptia.embrapa.br/agrofit/v1/pragas", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    })
-    .then((response) => response.json())
-    .then(async (response: Praga[]) => {
-      console.log("Resposta da API:", response);
 
-      const batataDoce = response.filter((praga) => 
-        praga.cultura.some((c) => 
-          c.nome.toLowerCase().includes("batata-doce")
-      )
-    );
+    const fetchData = async () => {
+      try {
+        const response = await fetch("https://api.cnptia.embrapa.br/agrofit/v1/pragas",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${ACCESS_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-      const pragasTratamento: await Promise.all(
-        batataDoce.map(async (praga) => {
-          const tratamento = await obterTratamento(praga.nome_cientifico);
-          return { ...praga, tratamento };
-        })
-      );
-      
-      setData(pragasTratamento);
-      setLoading(false);
-    })
-    .catch((error) => console.error("Erro ao buscar dados: ", error));
+        const data: Praga[] = await response.json();
+        const batataDoce = data.filter(praga => 
+          praga.cultura.some(c => 
+            c.nome.toLowerCase().includes("batata-doce")
+          )
+        );
+
+        const pragaTratamento = await Promise.all(
+          batataDoce.map(async (praga) => ({
+            ...praga,
+            tratamento: await obterTratamento(praga.nome_cientifico)
+          }))
+        );
+
+        setData(pragaTratamento);
+        setLoading(false);
+      } catch (error) {
+        console.error("Erro ao buscar dados: ", error);
+      }
+    };
+
+    fetchData();
   }, []);
-
-  const obterTratamento = async (nomeDoenca: string): Promise<string> => {
-    try {
-      const pergunta = `Qual o tratamento para ${nomeDoenca}?`;
-      const response = await fetchChatResponse(pergunta);
-      return response.choices[0]?.message?.content || 'Nenhuma resposta encontrada';
-    } catch (error) {
-      console.error(`Erro ao obter tratamento para ${nomeDoenca}:`, error);
-      return 'Erro ao obter tratamento';
-    }
-  };
 
   return (
     <Container>
