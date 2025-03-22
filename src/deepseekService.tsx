@@ -2,11 +2,11 @@ import axios from 'axios';
 
 const API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
-const API_KEY = '';
+const API_KEY = 'bf57679de6mshea8e56d17921ad5p19b5ddjsn13c16ac7e9b';
 
 export const fetchChatResponse = async (message: string) => {
     const data = {
-        model: 'deepseek',
+        model: 'deepseek-v3',
         messages: [
             {
                 role: 'user',
@@ -16,8 +16,9 @@ export const fetchChatResponse = async (message: string) => {
     };
 
     const headers = {
+        'x-rapidapi-key': API_KEY,
+        'x-rapidapi-host': API_URL,
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${API_KEY}`,
     };
     try {
         const response = await axios.post(API_URL, data, { headers });
