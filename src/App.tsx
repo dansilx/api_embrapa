@@ -1,7 +1,7 @@
 import React, {useEffect, useState } from 'react'
 import './App.css'
 import { Container, Row, Col, Table } from 'react-bootstrap';
-import { fetchChatResponse } from './deepseekService';
+//import { fetchChatResponse } from './deepseekService';
 
 interface Cultura {
   nome: string;
@@ -16,23 +16,52 @@ interface Praga {
   tratamento?: string;
 }
 
-const  App: React.FC = () => {
+const  App: React.FC = () => 
+{
   const [data, setData] = useState<Praga[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const ACCESS_TOKEN = "1a02d333-fcdd-3551-a6b6-8b973702e728";
 
-  const obterTratamento = async (nomeDoenca: string): Promise<string> => 
+  const obterTratamento = async (nomeDoenca: string): Promise<string> => {
+      const API_URL: string = 'https://deepseek-v31.p.rapidapi.com/';
+      const option: RequestInit = 
+      {
+        method: 'POST',
+        headers: 
+        {
+          'x-rapidapi-key': 'bf57679de6mshea8e56d17921ad5p19b5ddjsn13c16ac7e9b7',
+          'x-rapidapi-host': 'deepseek-v31.p.rapidapi.com',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(
+        {
+          model: 'deepseek-v3',
+          messages: 
+          [
+            {
+              role: 'user',
+              content: `Qual o tratamento para ${nomeDoenca} em batata-doce?`
+            }
+          ]
+        })
+      };
+  
+  try 
+  {
+    const response = await fetch(API_URL, option);
+    if (!response.ok) 
     {
-      try {
-        const pergunta = `Qual o tratamento para ${nomeDoenca} em batata-doce?`;
-        const response = await fetchChatResponse(pergunta);
-        return response.choices[0]?.message?.content || 'Nenhuma resposta encontrada';
-      } catch (error) {
-        console.error(`Erro ao obter tratamento para ${nomeDoenca}:`, error);
-        return 'Erro ao obter tratamento';
-      }
-    };
+      throw new Error(`Erro na requisição DeepSeek: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.choices?.[0]?.message?.content || 'Nenhuma resposta encontrada';
+  } catch (error) {
+    console.error(`Erro ao obter tratamento para ${nomeDoenca}:`, error);
+    return 'Erro ao obter tratamento';
+  }
+};
 
   useEffect(() => {
     document.title = "Batata-Doce Pragas";
@@ -41,12 +70,17 @@ const  App: React.FC = () => {
       try {
         const response = await fetch("https://api.cnptia.embrapa.br/agrofit/v1/pragas",
           {
-            method: "POST",
+            method: "GET",
             headers: {
               Authorization: `Bearer ${ACCESS_TOKEN}`,
               "Content-Type": "application/json",
             },
           });
+
+        if (!response.ok) 
+        {
+          throw new Error (`Erro na requisição: ${response.status}`);
+        }
 
         const data: Praga[] = await response.json();
         const batataDoce = data.filter(praga => 
