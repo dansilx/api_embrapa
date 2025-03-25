@@ -23,9 +23,10 @@ const  App: React.FC = () =>
 
   const ACCESS_TOKEN = "1a02d333-fcdd-3551-a6b6-8b973702e728";
 
-  const obterTratamento = async (nomeDoenca: string): Promise<string> => {
+  const obterTratamento = async (nomeDoenca: string): Promise<string> => 
+  {
       const API_URL: string = 'https://deepseek-v31.p.rapidapi.com/';
-      const option: RequestInit = 
+      const options: RequestInit = 
       {
         method: 'POST',
         headers: 
@@ -46,23 +47,29 @@ const  App: React.FC = () =>
           ]
         })
       };
-  
-  try 
-  {
-    const response = await fetch(API_URL, option);
-    if (!response.ok) 
-    {
-      throw new Error(`Erro na requisição DeepSeek: ${response.status}`);
-    }
 
-    const result = await response.json();
-    return result.choices?.[0]?.message?.content || 'Nenhuma resposta encontrada';
-  } catch (error) {
-    console.error(`Erro ao obter tratamento para ${nomeDoenca}:`, error);
-    return 'Erro ao obter tratamento';
+    const max = 3;
+    let tentativa = 0;
+
+    while (tentativa < max) {
+      try 
+      {
+        const response = await fetch(API_URL, options);
+        if (!response.ok) 
+        {
+          throw new Error(`Erro na requisição DeepSeek: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("Resposta DEEPSEEK: ", result);
+        return result.choices?.[0]?.message?.content || 'Nenhuma resposta encontrada';
+      } catch (error) {
+        console.error(`Erro ao obter tratamento para ${nomeDoenca}:`, error);
+        return 'Erro ao obter tratamento';
+      }
+    };
   }
-};
-
+}
   useEffect(() => {
     document.title = "Batata-Doce Pragas";
 
