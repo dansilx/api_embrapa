@@ -47,7 +47,7 @@ const  App: React.FC = () =>
           ]
         })
       };
-
+      
     const max = 3;
     let tentativa = 0;
 
@@ -55,21 +55,36 @@ const  App: React.FC = () =>
       try 
       {
         const response = await fetch(API_URL, options);
+
         if (!response.ok) 
         {
-          throw new Error(`Erro na requisição DeepSeek: ${response.status}`);
+          if (response.status === 429) 
+          {
+            console.warn(`Recebido 429 (Too many Requests). Tentativa ${tentativa + 1} de ${max}. Aguardando 2 segundos...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            tentativa++;
+            continue;
+          } else if (response.status === 403) {
+            throw new Error(`Erro na requeisição DeepSeek (403): Acesso negado.`);
+          } else {
+            throw new Error (`Erro na requisição DeepSeek: ${response.status}`)
+          }
         }
 
         const result = await response.json();
         console.log("Resposta DEEPSEEK: ", result);
         return result.choices?.[0]?.message?.content || 'Nenhuma resposta encontrada';
       } catch (error) {
-        console.error(`Erro ao obter tratamento para ${nomeDoenca}:`, error);
-        return 'Erro ao obter tratamento';
+        tentativa++;
+        if (tentativa >= max){
+          console.error(`Erro ao obter tratamento para ${nomeDoenca} após ${tentativa} tentativas: `, error);
+          return 'Erro ao obter tratamento';
+        }
       }
-    };
+    }
+    return 'Erro ao obter tratamento';
   }
-}
+
   useEffect(() => {
     document.title = "Batata-Doce Pragas";
 
